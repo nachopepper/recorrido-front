@@ -42,8 +42,7 @@
                                         :style="{ backgroundColor: setColor(availability, a.assignation_id) }">{{
                                             a.start_time + '-' + a.end_time }}</td>
                                     <td class="text-center">
-                                        <q-checkbox @click="() => console.log('asdsa')"
-                                            v-model="selected[a.availability_id]" />
+                                        <q-checkbox v-model="selected[a.availability_id]" />
                                     </td>
                                 </tr>
                             </tbody>
@@ -157,10 +156,17 @@ const fetchAvailabilities = async () => {
 const update = async () => {
     const params = '?start_week=' + props.weeks_params.start_week + '&end_week=' + props.weeks_params.end_week;
     const test = {};
-    const data = { data: [], test, hours_per_user: hours_per_user.value };
+    let data = { data: [], test };
+    let aux = {};
     for (const [key, value] of Object.entries(selected.value)) {
         const availability = availabilities.value.find(val => val.id == key);
         data.data.push({ id: key, enabled: value, user_id: availability.user_id, assignation_id: availability.assignation_id });
+        if(!aux[availability.user_id]) {
+            aux[availability.user_id] = 0
+        }
+        if(value) {
+            aux[availability.user_id] += 1
+        }
         if (!test[availability.assignation.date]) {
             test[availability.assignation.date] = {};
         }
@@ -170,8 +176,10 @@ const update = async () => {
         test[availability.assignation.date][availability.assignation_id] = { ...test[availability.assignation.date][availability.assignation_id], [availability.user_id]: value }
 
     }
-    selected.value = {};
 
+    data = { ...data, hours_per_user: aux}
+    selected.value = {};
+    console.log(hours_per_user.value)
     await asyncRequest("post", "/availabilities/update_multiple" + params, data);
 
     if (error.value) {
